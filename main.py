@@ -4,8 +4,8 @@ import sys
 import pygame
 import requests
 
-x, y = -180, -180
-zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -1)], 0
+x, y = 0, 0
+zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -1)], 5
 #zoom_k_x, zoom_k_y = 360 // zoom_levels, 180 // zoom_levels
 spn_x, spn_y = 0, 0
 map = "map.png"
@@ -23,7 +23,8 @@ def update():
     map_params = {
         "ll": str(x) + ',' + str(y),
         "spn": str(spn_x) + ',' + str(spn_y),
-        "l": "map"
+        "l": "map",
+        "pt": str(x) + ',' + str(y) + ',pmgnm1~' + str(x + spn_x) + ',' + str(y + spn_y) + ',pmblm1~' + str(x - spn_x) + ',' + str(y - spn_y) + ',pmrdm1'
     }
     response = requests.get(map_request, params=map_params)
     if not response:
@@ -53,16 +54,16 @@ while running:
                 k = min(len(zoom_levels) - 1, k + 1)
                 update()
             elif i.key == pygame.K_UP:
-                y += spn_y / 2
+                y += spn_y * 2
                 update()
             elif i.key == pygame.K_DOWN:
-                y -= spn_y / 2
+                y -= spn_y * 2
                 update()
             elif i.key == pygame.K_LEFT:
-                x -= spn_x / 2
+                x -= spn_x * 2
                 update()
             elif i.key == pygame.K_RIGHT:
-                x += spn_x / 2
+                x += spn_x * 2
                 update()
     pass
 pygame.quit()
