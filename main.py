@@ -23,8 +23,8 @@ def update():
     map_params = {
         "ll": str(x) + ',' + str(y),
         "spn": str(spn_x) + ',' + str(spn_y),
-        "l": "map",
-        "pt": str(x) + ',' + str(y) + ',pmgnm1~' + str(x + spn_x) + ',' + str(y + spn_y) + ',pmblm1~' + str(x - spn_x) + ',' + str(y - spn_y) + ',pmrdm1'
+        "l": "map"  #,
+        #"pt": str(x) + ',' + str(y) + ',pmgnm1~' + str(x + spn_x) + ',' + str(y + spn_y) + ',pmblm1~' + str(x - spn_x) + ',' + str(y - spn_y) + ',pmrdm1'
     }
     response = requests.get(map_request, params=map_params)
     if not response:
