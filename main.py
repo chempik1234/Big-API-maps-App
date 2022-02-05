@@ -4,19 +4,22 @@ import sys
 import pygame
 import requests
 
-x, y = 51.0, 54.0
+x, y = -180, -180
 zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -1)], 0
-print(zoom_levels)
 #zoom_k_x, zoom_k_y = 360 // zoom_levels, 180 // zoom_levels
-spn_x, spn_y = 180.0, 90.0
+spn_x, spn_y = 0, 0
 map = "map.png"
 SCREEN_SIZE = [600, 450]
 
 
 def update():
+    global x, y, spn_x, spn_y
+    screen.fill(pygame.Color('gray'), [0, 0] + SCREEN_SIZE)
     map_request = "http://static-maps.yandex.ru/1.x/"
     spn_y = zoom_levels[k]
-    spn_x = spn_y * 4 / 3
+    spn_x = spn_y * SCREEN_SIZE[0] / SCREEN_SIZE[1]
+    x = min(max(-180 + spn_x / 2, x), 180 - spn_x / 2)
+    y = min(max(-90 + spn_y / 2, y), 90 - spn_y / 2)
     map_params = {
         "ll": str(x) + ',' + str(y),
         "spn": str(spn_x) + ',' + str(spn_y),
@@ -48,6 +51,18 @@ while running:
                 update()
             elif i.key == pygame.K_PAGEDOWN:
                 k = min(len(zoom_levels) - 1, k + 1)
+                update()
+            elif i.key == pygame.K_UP:
+                y += spn_y / 2
+                update()
+            elif i.key == pygame.K_DOWN:
+                y -= spn_y / 2
+                update()
+            elif i.key == pygame.K_LEFT:
+                x -= spn_x / 2
+                update()
+            elif i.key == pygame.K_RIGHT:
+                x += spn_x / 2
                 update()
     pass
 pygame.quit()
