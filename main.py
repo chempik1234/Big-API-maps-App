@@ -92,8 +92,9 @@ def geocoder_coordinates_address(geocode):
         return None
     toponym = results[0]["GeoObject"]
     toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
+    print(toponym["metaDataProperty"]["GeocoderMetaData"]["Address"])
     if postal and "postal_code" in toponym["metaDataProperty"]["GeocoderMetaData"]["Address"].keys():
-        toponym_address += toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
+        toponym_address += ', ' + toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
     toponym_coodrinates = toponym["Point"]["pos"]
     return toponym_coodrinates, toponym_address
 
@@ -200,14 +201,23 @@ def update():
     pygame.display.flip()
 
 
-def search_toponym():
+def search_toponym(param_that_replaces_search=None):
     global x, y, pt, k, address
-    geo = geocoder_coordinates_address(search)
+    #address = ''
+    if param_that_replaces_search:
+        geo = geocoder_coordinates_address(param_that_replaces_search)
+    elif search:
+        geo = geocoder_coordinates_address(search)
+    elif address:
+        geo = geocoder_coordinates_address(address)
+    else:
+        return None
     if geo:
-        x, y = list(map(float, geo[0].split()))
-        pt = (x, y)
+        pt = list(map(float, geo[0].split()))
+        if not param_that_replaces_search:
+            x, y = pt
+            k = index_closest_element(get_size(search)[1], zoom_levels)
         address = geo[1]
-        k = index_closest_element(get_size(search)[1], zoom_levels)
         update()
 
 
@@ -253,8 +263,7 @@ while running:
                 update()
             elif i.key == pygame.K_F1:
                 postal = not postal
-                search_toponym()
-                update()
+                search_toponym(address)
         elif i.type == pygame.MOUSEBUTTONDOWN:
             if in_rect(i.pos, button_enter_rect) and i.button == 1:
                 search_toponym()
@@ -262,6 +271,9 @@ while running:
                 pt = None
                 address = ''
                 update()
+            elif not in_rect(i.pos, [address_x, address_x, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
+                    i.button == 1:
+                search_toponym("ll=" + str(x) + ',' + str(y))
     pass
 pygame.quit()
 os.remove(map_)
