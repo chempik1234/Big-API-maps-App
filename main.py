@@ -253,6 +253,7 @@ while running:
                 update()
             elif i.key == pygame.K_F1:
                 postal = not postal
+                search_toponym()
                 update()
         elif i.type == pygame.MOUSEBUTTONDOWN:
             if in_rect(i.pos, button_enter_rect) and i.button == 1:
