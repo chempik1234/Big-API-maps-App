@@ -270,9 +270,9 @@ while running:
                 pt = None
                 address = ''
                 update()
-            elif not in_rect(i.pos, [address_x, address_x, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
-                    i.button == 1:
-                search_toponym("ll=" + str(x) + ',' + str(y))
+            #elif not in_rect(i.pos, [address_x, address_x, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
+            #        i.button == 1:
+            #    search_toponym("ll=" + str(x) + ',' + str(y))
     pass
 pygame.quit()
 os.remove(map_)
