@@ -3,10 +3,11 @@ import sys
 
 import pygame
 import requests
-from get_size import get_size
+from get_size import get_size, get_organization_coords
 
 x, y = 0, 0
-zoom_levels, k = [90, 41, 22, 11, 4, 2.4, 1, 0.6, 0.2, 0.1, 0.07, 0.02, 0.01, 0.005], 0
+k = 0
+zoom_levels_y = [360 / 2 ** i for i in range(18)]
 #zoom_k_x, zoom_k_y = 360 // zoom_levels, 180 // zoom_levels
 spn_x, spn_y = 0, 0
 map_, mode, search = "map.png", 0, ""
@@ -160,13 +161,15 @@ def update():
               SCREEN_SIZE[0] / 3, SCREEN_SIZE[1] // 5, pygame.Color("white"))
     pygame.display.flip()
     map_request = "http://static-maps.yandex.ru/1.x/"
-    spn_y = zoom_levels[k]
-    spn_x = spn_y * SCREEN_SIZE[0] / SCREEN_SIZE[1]
+    spn_x = 360 / 2 ** k
+    spn_y = 180 / 2 ** k
     x = min(max(-180 + spn_x / 2, x), 180 - spn_x / 2)
     y = min(max(-90 + spn_y / 2, y), 90 - spn_y / 2)
     map_params = {
         "ll": str(x) + ',' + str(y),
-        "spn": str(spn_x) + ',' + str(spn_y),
+        "z": k,
+        #"spn": str(spn_x) + ',' + str(spn_y),
+        "size": str(SCREEN_SIZE[0]) + ',' + str(SCREEN_SIZE[1]),
         "l": modes[mode]
     }
     if pt:
@@ -215,7 +218,7 @@ def search_toponym(param_that_replaces_search=None):
         pt = list(map(float, geo[0].split()))
         if not param_that_replaces_search:
             x, y = pt
-            k = index_closest_element(get_size(search)[1], zoom_levels)
+            k = index_closest_element(get_size(search)[1], zoom_levels_y)
         address = geo[1]
         update()
 
@@ -233,7 +236,7 @@ while running:
                 k = max(0, k - 1)
                 update()
             elif i.key == pygame.K_PAGEDOWN:
-                k = min(len(zoom_levels) - 1, k + 1)
+                k = min(17, k + 1)
                 update()
             elif i.key == pygame.K_UP:
                 y += spn_y * 2
@@ -263,6 +266,7 @@ while running:
             elif i.key == pygame.K_F1:
                 postal = not postal
                 search_toponym(address)
+                update()
         elif i.type == pygame.MOUSEBUTTONDOWN:
             if in_rect(i.pos, button_enter_rect) and i.button == 1:
                 search_toponym()
@@ -270,13 +274,29 @@ while running:
                 pt = None
                 address = ''
                 update()
-            elif not in_rect(i.pos, [address_x, address_y, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
-                    i.button == 1:
+            elif not in_rect(i.pos, [address_x, address_y, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]):
                 xx, yy = i.pos
-                xx, yy = (xx / SCREEN_SIZE[0]) * spn_x, (yy / SCREEN_SIZE[1]) * spn_y
-                xx += x - spn_x / 2
-                yy += y - spn_y / 2
-                search_toponym(str(xx) + ',' + str(yy))
+                spn_x = 360 / 2 ** k
+                spn_y = 180 / 2 ** k
+                yy = SCREEN_SIZE[1] - yy
+                xx = (xx / SCREEN_SIZE[0]) * spn_x * 1.175
+                xx += x - spn_x * 0.5 * 1.175
+                a = yy / SCREEN_SIZE[1]
+                yy = (yy / SCREEN_SIZE[1]) * spn_y# * 1.6
+                yy += y - spn_y * 0.5# * 1.6
+                if i.button == 1:
+                    search_toponym(str(xx) + ',' + str(yy))
+                elif i.button == 3:
+                    coords = get_organization_coords(xx, yy)
+                    pt = None
+                    if coords:
+                        xx, yy = coords
+                        search_toponym(str(xx) + ',' + str(yy))
+                        pt = coords
+                #else:
+                #    print(xx, yy)
+                #    pt = (xx, yy)
+                #    update()
     pass
 pygame.quit()
 os.remove(map_)
