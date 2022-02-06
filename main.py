@@ -5,16 +5,34 @@ import pygame
 import requests
 
 x, y = 0, 0
-zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -1)], 5
+zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -2)] + [0.1, 0.09, 0.07, 0.05, 0.02, 0.01, 0.005], 0
 #zoom_k_x, zoom_k_y = 360 // zoom_levels, 180 // zoom_levels
 spn_x, spn_y = 0, 0
 map = "map.png"
+mode = 0
 SCREEN_SIZE = [600, 450]
+
+
+def draw_text(text, text_coord_y, text_coord_x, size_font, color):
+    font = pygame.font.Font(None, size_font)
+    for line in text:
+        string_rendered = font.render(line, 1, color)
+        _rect = string_rendered.get_rect()
+        text_coord_y += 10
+        _rect.top = text_coord_y
+        _rect.x = text_coord_x
+        text_coord_y += _rect.height
+        screen.blit(string_rendered, _rect)
 
 
 def update():
     global x, y, spn_x, spn_y
+    modes = ["map", "sat", "sat,skl"]
+    rus_modes = ["карта", "спутник", "гибрид"]
     screen.fill(pygame.Color('gray'), [0, 0] + SCREEN_SIZE)
+    draw_text(["Загрузка ..."], SCREEN_SIZE[1] / 3,
+              SCREEN_SIZE[0] / 3, SCREEN_SIZE[1] // 5, pygame.Color("white"))
+    pygame.display.flip()
     map_request = "http://static-maps.yandex.ru/1.x/"
     spn_y = zoom_levels[k]
     spn_x = spn_y * SCREEN_SIZE[0] / SCREEN_SIZE[1]
@@ -23,8 +41,7 @@ def update():
     map_params = {
         "ll": str(x) + ',' + str(y),
         "spn": str(spn_x) + ',' + str(spn_y),
-        "l": "map"  #,
-        #"pt": str(x) + ',' + str(y) + ',pmgnm1~' + str(x + spn_x) + ',' + str(y + spn_y) + ',pmblm1~' + str(x - spn_x) + ',' + str(y - spn_y) + ',pmrdm1'
+        "l": modes[mode]
     }
     response = requests.get(map_request, params=map_params)
     if not response:
@@ -35,6 +52,10 @@ def update():
     with open(map, "wb") as file:
         file.write(response.content)
     screen.blit(pygame.image.load(map), (0, 0))
+    draw_text(["[K] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45,
+              SCREEN_SIZE[0] * 2 / 3, SCREEN_SIZE[1] // 15, pygame.Color("black"))
+    draw_text(["[K] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45 - 1,
+              SCREEN_SIZE[0] * 2 / 3, SCREEN_SIZE[1] // 15, pygame.Color("white"))
     pygame.display.flip()
 
 
@@ -64,6 +85,9 @@ while running:
                 update()
             elif i.key == pygame.K_RIGHT:
                 x += spn_x * 2
+                update()
+            elif i.key == pygame.K_k:
+                mode = (mode + 1) % 3
                 update()
     pass
 pygame.quit()
