@@ -6,7 +6,7 @@ import requests
 from get_size import get_size
 
 x, y = 0, 0
-zoom_levels, k = [90, 41, 22, 11] + [i / 10 for i in range(40, 1, -2)] + [0.1, 0.09, 0.07, 0.05, 0.02, 0.01, 0.005], 0
+zoom_levels, k = [90, 41, 22, 11, 4, 2.4, 1, 0.6, 0.2, 0.1, 0.07, 0.02, 0.01, 0.005], 0
 #zoom_k_x, zoom_k_y = 360 // zoom_levels, 180 // zoom_levels
 spn_x, spn_y = 0, 0
 map_, mode, search = "map.png", 0, ""
@@ -147,7 +147,7 @@ def address_update():
         font_size *= min(1, address_size_x / get_rect_str([address], address_y + 3, 3, font_size)[0].width)
     screen.fill(pygame.Color("black"), [0, address_y, address_size_x, address_size_y])
     screen.fill(pygame.Color("gray"), [1, address_y + 1, address_size_x - 2, address_size_y - 2])
-    draw_text([address], address_y + 3, 3, int(font_size) - 1, pygame.Color("black"))
+    draw_text([address], address_y, 3, int(font_size) - 1, pygame.Color("black"))
     pygame.display.flip()
 
 
@@ -270,9 +270,13 @@ while running:
                 pt = None
                 address = ''
                 update()
-            #elif not in_rect(i.pos, [address_x, address_x, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
-            #        i.button == 1:
-            #    search_toponym("ll=" + str(x) + ',' + str(y))
+            elif not in_rect(i.pos, [address_x, address_y, SCREEN_SIZE[0], SCREEN_SIZE[1] - address_y]) and \
+                    i.button == 1:
+                xx, yy = i.pos
+                xx, yy = (xx / SCREEN_SIZE[0]) * spn_x, (yy / SCREEN_SIZE[1]) * spn_y
+                xx += x - spn_x / 2
+                yy += y - spn_y / 2
+                search_toponym(str(xx) + ',' + str(yy))
     pass
 pygame.quit()
 os.remove(map_)
