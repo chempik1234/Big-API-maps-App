@@ -12,8 +12,9 @@ spn_x, spn_y = 0, 0
 map_, mode, search = "map.png", 0, ""
 SCREEN_SIZE = [600, 450]
 sqr_sizex, sqr_sizey, sqr_y = SCREEN_SIZE[0] * .9, SCREEN_SIZE[1] * .1,  SCREEN_SIZE[1] * .9
+address_x, address_y, address_size_x, address_size_y = 0, SCREEN_SIZE[1] * 0.825, SCREEN_SIZE[0] * 0.75, SCREEN_SIZE[1] * 0.075
 button_enter_rect = [sqr_sizex, sqr_y, SCREEN_SIZE[0] * .1, sqr_sizey]
-button_delete_rect = [SCREEN_SIZE[0] * 0.75, SCREEN_SIZE[1] * 0.85, SCREEN_SIZE[0] * 0.25, SCREEN_SIZE[1] * 0.05]
+button_delete_rect = [address_size_x, SCREEN_SIZE[1] * 0.85, SCREEN_SIZE[0] * 0.25, SCREEN_SIZE[1] * 0.05]
 text_keys = {pygame.K_1: '1',
              pygame.K_2: '2',
              pygame.K_3: '3',
@@ -64,7 +65,7 @@ geocoder_params = {
     "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
     "format": "json",
 }
-pt = None
+pt, address = None, ''
 
 
 def index_closest_element(elem, list_):
@@ -80,7 +81,7 @@ def index_closest_element(elem, list_):
     return k
 
 
-def geocoder_coordinates_bound(geocode):
+def geocoder_coordinates_address(geocode):
     geocoder_params["geocode"] = geocode
     response = requests.get(geocoder_api_server, params=geocoder_params)
     if not response:
@@ -90,8 +91,9 @@ def geocoder_coordinates_bound(geocode):
     if not results:
         return None
     toponym = results[0]["GeoObject"]
+    toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
     toponym_coodrinates = toponym["Point"]["pos"]
-    return toponym_coodrinates
+    return toponym_coodrinates, toponym_address
 
 
 def in_rect(xy, xywh):
@@ -137,6 +139,16 @@ def search_update():
     pygame.display.flip()
 
 
+def address_update():
+    font_size = int(sqr_sizey) - 4
+    if address:
+        font_size *= min(1, address_size_x / get_rect_str([address], address_y + 3, 3, font_size)[0].width)
+    screen.fill(pygame.Color("black"), [0, address_y, address_size_x, address_size_y])
+    screen.fill(pygame.Color("gray"), [1, address_y + 1, address_size_x - 2, address_size_y - 2])
+    draw_text([address], address_y + 3, 3, int(font_size) - 1, pygame.Color("black"))
+    pygame.display.flip()
+
+
 def update():
     global x, y, spn_x, spn_y
     modes = ["map", "sat", "sat,skl"]
@@ -179,6 +191,7 @@ def update():
     draw_text(["Убрать метку"], button_delete_rect[1], button_delete_rect[0],
               int(SCREEN_SIZE[1] * 0.05), pygame.Color("white"))
     search_update()
+    address_update()
     pygame.display.flip()
 
 
@@ -220,17 +233,20 @@ while running:
                 search_update()
             elif i.key == pygame.K_DELETE:
                 pt = None
+                address = None
                 update()
         elif i.type == pygame.MOUSEBUTTONDOWN:
             if in_rect(i.pos, button_enter_rect) and i.button == 1:
-                geo = geocoder_coordinates_bound(search)
+                geo = geocoder_coordinates_address(search)
                 if geo:
-                    x, y = list(map(float, geo.split()))
+                    x, y = list(map(float, geo[0].split()))
                     pt = (x, y)
+                    address = geo[1]
                     k = index_closest_element(get_size(search)[1], zoom_levels)
                     update()
             elif in_rect(i.pos, button_delete_rect) and i.button == 1:
                 pt = None
+                address = ''
                 update()
     pass
 pygame.quit()
