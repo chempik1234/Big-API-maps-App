@@ -92,7 +92,6 @@ def geocoder_coordinates_address(geocode):
         return None
     toponym = results[0]["GeoObject"]
     toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
-    print(toponym["metaDataProperty"]["GeocoderMetaData"]["Address"])
     if postal and "postal_code" in toponym["metaDataProperty"]["GeocoderMetaData"]["Address"].keys():
         toponym_address += ', ' + toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
     toponym_coodrinates = toponym["Point"]["pos"]
