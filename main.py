@@ -12,7 +12,8 @@ spn_x, spn_y = 0, 0
 map_, mode, search = "map.png", 0, ""
 SCREEN_SIZE = [600, 450]
 sqr_sizex, sqr_sizey, sqr_y = SCREEN_SIZE[0] * .9, SCREEN_SIZE[1] * .1,  SCREEN_SIZE[1] * .9
-button_rect = [sqr_sizex, sqr_y, SCREEN_SIZE[0] * .1, sqr_sizey]
+button_enter_rect = [sqr_sizex, sqr_y, SCREEN_SIZE[0] * .1, sqr_sizey]
+button_delete_rect = [SCREEN_SIZE[0] * 0.75, SCREEN_SIZE[1] * 0.85, SCREEN_SIZE[0] * 0.25, SCREEN_SIZE[1] * 0.05]
 text_keys = {pygame.K_1: '1',
              pygame.K_2: '2',
              pygame.K_3: '3',
@@ -23,6 +24,7 @@ text_keys = {pygame.K_1: '1',
              pygame.K_8: '8',
              pygame.K_9: '9',
              pygame.K_0: '0',
+             pygame.K_MINUS: '-',
              pygame.K_q: 'й',
              pygame.K_w: 'ц',
              pygame.K_e: 'у',
@@ -53,8 +55,8 @@ text_keys = {pygame.K_1: '1',
              pygame.K_b: 'и',
              pygame.K_n: 'т',
              pygame.K_m: 'ь',
-             pygame.K_LESS: 'б',
-             pygame.K_GREATER: 'ю',
+             pygame.K_COMMA: 'б',
+             pygame.K_PERIOD: 'ю',
              pygame.K_SLASH: '.',
              pygame.K_SPACE: ' '}
 geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
@@ -85,6 +87,8 @@ def geocoder_coordinates_bound(geocode):
         sys.exit()
     json_response = response.json()
     results = json_response["response"]["GeoObjectCollection"]["featureMember"]
+    if not results:
+        return None
     toponym = results[0]["GeoObject"]
     toponym_coodrinates = toponym["Point"]["pos"]
     return toponym_coodrinates
@@ -128,7 +132,7 @@ def search_update():
         font_size *= min(1, sqr_sizex / get_rect_str([search], sqr_y + 3, 3, font_size)[0].width)
     screen.fill(pygame.Color("black"), [0, sqr_y, sqr_sizex, sqr_sizey])
     screen.fill(pygame.Color("white"), [1, sqr_y + 1, sqr_sizex - 2, sqr_sizey - 2])
-    screen.fill(pygame.Color("red"), button_rect)
+    screen.fill(pygame.Color("red"), button_enter_rect)
     draw_text([search], sqr_y + 3, 3, int(font_size) - 1, pygame.Color("black"))
     pygame.display.flip()
 
@@ -162,10 +166,18 @@ def update():
     with open(map_, "wb") as file:
         file.write(response.content)
     screen.blit(pygame.image.load(map_), (0, 0))
+    font_size = SCREEN_SIZE[1] // 15
     draw_text(["[ALT] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45,
-              SCREEN_SIZE[0] * 5 / 8, SCREEN_SIZE[1] // 15, pygame.Color("black"))
+              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("black"))
     draw_text(["[ALT] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45 - 1,
-              SCREEN_SIZE[0] * 5 / 8, SCREEN_SIZE[1] // 15, pygame.Color("white"))
+              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("white"))
+    draw_text(["[DEL] Убрать метку"], SCREEN_SIZE[1] / 45 + font_size,
+              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("black"))
+    draw_text(["[DEL] Убрать метку"], SCREEN_SIZE[1] / 45 - 1 + font_size,
+              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("white"))
+    screen.fill(pygame.Color("black"), button_delete_rect)
+    draw_text(["Убрать метку"], button_delete_rect[1], button_delete_rect[0],
+              int(SCREEN_SIZE[1] * 0.05), pygame.Color("white"))
     search_update()
     pygame.display.flip()
 
@@ -206,11 +218,19 @@ while running:
             elif i.key == pygame.K_BACKSPACE and search:
                 search = search[: -1]
                 search_update()
+            elif i.key == pygame.K_DELETE:
+                pt = None
+                update()
         elif i.type == pygame.MOUSEBUTTONDOWN:
-            if in_rect(i.pos, button_rect) and i.button == 1:
-                x, y = list(map(float, geocoder_coordinates_bound(search).split()))
-                pt = (x, y)
-                k = index_closest_element(get_size(search)[1], zoom_levels)
+            if in_rect(i.pos, button_enter_rect) and i.button == 1:
+                geo = geocoder_coordinates_bound(search)
+                if geo:
+                    x, y = list(map(float, geo.split()))
+                    pt = (x, y)
+                    k = index_closest_element(get_size(search)[1], zoom_levels)
+                    update()
+            elif in_rect(i.pos, button_delete_rect) and i.button == 1:
+                pt = None
                 update()
     pass
 pygame.quit()
