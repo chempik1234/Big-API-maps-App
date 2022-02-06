@@ -65,7 +65,7 @@ geocoder_params = {
     "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
     "format": "json",
 }
-pt, address = None, ''
+pt, address, postal = None, '', False
 
 
 def index_closest_element(elem, list_):
@@ -92,6 +92,8 @@ def geocoder_coordinates_address(geocode):
         return None
     toponym = results[0]["GeoObject"]
     toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["formatted"]
+    if postal and "postal_code" in toponym["metaDataProperty"]["GeocoderMetaData"]["Address"].keys():
+        toponym_address += toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
     toponym_coodrinates = toponym["Point"]["pos"]
     return toponym_coodrinates, toponym_address
 
@@ -179,13 +181,16 @@ def update():
         file.write(response.content)
     screen.blit(pygame.image.load(map_), (0, 0))
     font_size = SCREEN_SIZE[1] // 15
-    draw_text(["[ALT] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45,
+    pripisat = "Не писать"
+    if not postal:
+        pripisat = "Написать"
+    draw_text(["[ALT] Режим: " + rus_modes[mode],
+               "[DEL] Убрать метку", "[F1] " + pripisat,
+               "почтовый индекс", "в адресе"], SCREEN_SIZE[1] / 45,
               SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("black"))
-    draw_text(["[ALT] Режим: " + rus_modes[mode]], SCREEN_SIZE[1] / 45 - 1,
-              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("white"))
-    draw_text(["[DEL] Убрать метку"], SCREEN_SIZE[1] / 45 + font_size,
-              SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("black"))
-    draw_text(["[DEL] Убрать метку"], SCREEN_SIZE[1] / 45 - 1 + font_size,
+    draw_text(["[ALT] Режим: " + rus_modes[mode],
+               "[DEL] Убрать метку", "[F1] " + pripisat,
+               "почтовый индекс", "в адресе"], SCREEN_SIZE[1] / 45 - 1,
               SCREEN_SIZE[0] * 5 / 8, font_size, pygame.Color("white"))
     screen.fill(pygame.Color("black"), button_delete_rect)
     draw_text(["Убрать метку"], button_delete_rect[1], button_delete_rect[0],
@@ -193,6 +198,17 @@ def update():
     search_update()
     address_update()
     pygame.display.flip()
+
+
+def search_toponym():
+    global x, y, pt, k, address
+    geo = geocoder_coordinates_address(search)
+    if geo:
+        x, y = list(map(float, geo[0].split()))
+        pt = (x, y)
+        address = geo[1]
+        k = index_closest_element(get_size(search)[1], zoom_levels)
+        update()
 
 
 pygame.init()
@@ -235,15 +251,12 @@ while running:
                 pt = None
                 address = None
                 update()
+            elif i.key == pygame.K_F1:
+                postal = not postal
+                update()
         elif i.type == pygame.MOUSEBUTTONDOWN:
             if in_rect(i.pos, button_enter_rect) and i.button == 1:
-                geo = geocoder_coordinates_address(search)
-                if geo:
-                    x, y = list(map(float, geo[0].split()))
-                    pt = (x, y)
-                    address = geo[1]
-                    k = index_closest_element(get_size(search)[1], zoom_levels)
-                    update()
+                search_toponym()
             elif in_rect(i.pos, button_delete_rect) and i.button == 1:
                 pt = None
                 address = ''
